@@ -41,15 +41,15 @@ def token_required(f):
             
             current_user["_id"] = str(current_user["_id"])
 
-        except jwt.ExpiredSignatureError:
+        except jwt.ExpiredSignatureError as e:
             return make_response( jsonify( {"ERROR" : "Token Has Expired", "details": str(e)} ), 401 )
-        except jwt.InvalidTokenError:
+        except jwt.InvalidTokenError as e:
             return make_response( jsonify( {"ERROR" : "Token Is Invalid", "details": str(e)} ), 401 )
         
         return f(current_user, *args, **kwargs)
     return decorated
 
-    #POSTS ENDPOINTS
+#POSTS ENDPOINTS
 
 #GET - get all posts
 
@@ -396,9 +396,6 @@ def like_post(post_id):
         )
     except Exception as e:
         return make_response( jsonify( {"ERROR" : "Database Update Failed", "details": str(e)} ), 500 )
-    
-    if result.matched_count == 0:
-        return make_response( jsonify( {"ERROR" : "Post Not Found"} ), 400 )
     
     if result.matched_count == 0:
         return make_response( jsonify( {"ERROR" : "Post Not Found"} ), 400 )
