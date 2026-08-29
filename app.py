@@ -18,6 +18,8 @@ db = client["socialMedia"]
 posts_collection = db["posts"]
 comments_collection = db["comments"]
 users_collection = db["users"]
+users = db.users
+blacklist = db.blacklist
 
 
 #DECORATOR
@@ -35,6 +37,11 @@ def token_required(f):
         
         try:
             data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+
+            bl_token = blacklist.find_one({ 'token': token })
+            if bl_token:
+                return make_response(jsonify({ "ERROR": "Token Has Been Cancelled" }), 401)
+        
             current_user = users_collection.find_one({"_id": ObjectId(data['user_id'])})
             if not current_user:
                 return make_response( jsonify( {"ERROR" : "User Not Found"} ), 401 )
@@ -605,6 +612,17 @@ def login_user():
         return make_response( jsonify( {"token": token} ), 200 )
     else:
         return make_response( jsonify( {"ERROR": "Invalid Username or Password"} ), 401 )
+
+#User Logout
+
+@app.route('/api/v1.0/logout', methods=['GET'])
+@token_required
+def logout(current_user):
+    token_string = request.headers['Authorisation']
+    token = token_string.split(" ")[1]
+    
+    blacklist.insert_one({ 'token': token })
+    return make_response(jsonify({ "Message": "Successfully logged out" }), 200)
 
 if __name__ == "__main__":
     app.run(debug=True, port=4999)
